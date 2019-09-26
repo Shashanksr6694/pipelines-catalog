@@ -1,0 +1,57 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: skip-param-task
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+    params:
+      - name: PARAM_A
+        description: task parameter A
+        default: "val-a"
+      - name: PARAM_B
+        description: task parameter B
+        default: "val-b"
+      - name: PARAM_C
+        description: task parameter C
+        default: "skip-if-not-set"
+      - name: PARAM_D
+        description: task parameter D
+        default: "skip-if-not-set"
+  steps:
+    - name: filter-args
+      image: quay.io/openshift-pipeline/s2i
+      workingdir: /filter-args
+      command:
+      - '/bin/sh'
+      - '-c'
+      args:
+        - ARG="" &&
+          if [[ $(inputs.params.PARAM_C) != "skip-if-not-set" ]]; then
+            ARG=" -e  $(inputs.params.PARAM_C) ";
+          fi &&
+          if [[ $(inputs.params.PARAM_D) != "skip-if-not-set" ]]; then
+            ARG="$ARG -e  $(inputs.params.PARAM_D) ";
+          fi &&
+          echo "$ARG" | tee args
+      volumeMounts:
+        - name: vfilterargs
+          mountPath: /filter-args
+    - name: use-args
+      image: quay.io/openshift-pipeline/s2i
+      workingdir: /filter-args
+      command:
+        - '/bin/sh'
+        - '-c'
+      args:
+        - echo "s2i $(cat args)"
+      volumeMounts:
+        - name: vfilterargs
+          mountPath: /filter-args
+  volumes:
+    - name: varlibcontainers
+      emptyDir: {}
+    - name: vfilterargs
+      emptyDir: {}

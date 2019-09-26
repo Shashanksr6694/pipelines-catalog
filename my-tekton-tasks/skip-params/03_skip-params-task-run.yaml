@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: skip-param-tr
+spec:
+  taskRef:
+    name: skip-param-task
+  inputs:
+    resources:
+    - name: workspace
+      resourceRef:
+        name: skaffold-git
+    params:
+    - name: PARAM_A
+      value: "val-tr-a"
+    - name: PARAM_B
+      value: "val-tr-b"
+    - name: PARAM_D
+      value: "val-tr-d"
